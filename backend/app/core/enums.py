@@ -1,0 +1,77 @@
+import enum
+
+
+class UserRole(str, enum.Enum):
+    CUSTOMER = "CUSTOMER"
+    BANK_OPERATOR = "BANK_OPERATOR"
+    BRANCH_MANAGER = "BRANCH_MANAGER"
+    SUPER_ADMIN = "SUPER_ADMIN"
+
+
+class UserStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    SUSPENDED = "SUSPENDED"
+    INACTIVE = "INACTIVE"
+
+
+class BranchStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+
+class LockerSize(str, enum.Enum):
+    SMALL = "SMALL"
+    MEDIUM = "MEDIUM"
+    LARGE = "LARGE"
+    EXTRA_LARGE = "EXTRA_LARGE"
+
+
+class LockerStatus(str, enum.Enum):
+    AVAILABLE = "AVAILABLE"
+    OCCUPIED = "OCCUPIED"
+    VERIFICATION_PENDING = "VERIFICATION_PENDING"
+    ACCESS_ACTIVE = "ACCESS_ACTIVE"
+    MAINTENANCE = "MAINTENANCE"
+    RESTRICTED = "RESTRICTED"
+
+
+class RequestType(str, enum.Enum):
+    ACCESS = "ACCESS"
+    INSPECTION = "INSPECTION"
+    MAINTENANCE = "MAINTENANCE"
+    CLOSURE = "CLOSURE"
+
+
+class RequestStatus(str, enum.Enum):
+    SUBMITTED = "SUBMITTED"
+    VERIFICATION_PENDING = "VERIFICATION_PENDING"
+    TOKEN_A_VERIFIED = "TOKEN_A_VERIFIED"
+    TOKEN_B_VERIFIED = "TOKEN_B_VERIFIED"
+    APPROVAL_PENDING = "APPROVAL_PENDING"
+    APPROVED = "APPROVED"
+    ACCESS_ACTIVE = "ACCESS_ACTIVE"
+    COMPLETED = "COMPLETED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
+class TokenType(str, enum.Enum):
+    CUSTOMER_TOKEN = "CUSTOMER_TOKEN"
+    BANK_TOKEN = "BANK_TOKEN"
+
+
+class TokenStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    VERIFIED = "VERIFIED"
+    EXPIRED = "EXPIRED"
+    FAILED = "FAILED"
+
+
+class NotificationType(str, enum.Enum):
+    REQUEST_UPDATE = "REQUEST_UPDATE"
+    VERIFICATION = "VERIFICATION"
+    APPROVAL = "APPROVAL"
+    REJECTION = "REJECTION"
+    SCHEDULED_ACCESS = "SCHEDULED_ACCESS"
+    SYSTEM = "SYSTEM"

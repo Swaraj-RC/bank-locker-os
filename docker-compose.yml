@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-locker_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-locker_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-locker_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - locker_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-locker_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-locker_user}:${POSTGRES_PASSWORD:-locker_pass}@postgres:5432/${POSTGRES_DB:-locker_db}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-CHANGE_ME_DEV_ONLY_NOT_FOR_PRODUCTION}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      VERIFICATION_TOKEN_TTL_SECONDS: ${VERIFICATION_TOKEN_TTL_SECONDS:-300}
+      VERIFICATION_TOKEN_MAX_ATTEMPTS: ${VERIFICATION_TOKEN_MAX_ATTEMPTS:-3}
+      OTP_RATE_LIMIT_PER_MINUTE: ${OTP_RATE_LIMIT_PER_MINUTE:-5}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-web:
+    build: ./admin-web
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "${ADMIN_WEB_PORT:-3000}:3000"
+    depends_on:
+      - backend
+
+volumes:
+  locker_postgres_data:
