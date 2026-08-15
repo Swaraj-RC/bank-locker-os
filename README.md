@@ -53,6 +53,81 @@ flowchart TB
     C --> E[(Redis<br/>OTP / Token / Rate-limit State)]
 ```
 
+## Face Verification Architecture
+```
+                    ┌──────────────────────┐
+                    │     USER MOBILE APP  │
+                    │      React + Vite     │
+                    └──────────┬───────────┘
+                               │
+                               │ 1. Login Request
+                               ▼
+                    ┌──────────────────────┐
+                    │   LOGIN / AUTH API   │
+                    │       FastAPI        │
+                    └──────────┬───────────┘
+                               │
+                               │ 2. Identify Customer
+                               ▼
+                    ┌──────────────────────┐
+                    │   USER DATABASE      │
+                    │     PostgreSQL       │
+                    │                      │
+                    │ User ID              │
+                    │ Face Template Ref.   │
+                    │ Account Status       │
+                    └──────────┬───────────┘
+                               │
+                               │ 3. Request Face Login
+                               ▼
+                    ┌──────────────────────┐
+                    │ FACE VERIFICATION    │
+                    │      SERVICE         │
+                    └──────────┬───────────┘
+                               │
+                     ┌─────────┴─────────┐
+                     │                   │
+                     ▼                   ▼
+             ┌──────────────┐    ┌──────────────┐
+             │ Face Detect  │    │ Liveness     │
+             │              │    │ Detection    │
+             └──────┬───────┘    └──────┬───────┘
+                    │                   │
+                    └─────────┬─────────┘
+                              ▼
+                    ┌──────────────────────┐
+                    │ FACE MATCHING ENGINE │
+                    │                      │
+                    │ Live Face            │
+                    │       VS             │
+                    │ Stored Template      │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │                     │
+                 MATCH                  NO MATCH
+                    │                     │
+                    ▼                     ▼
+             ┌────────────┐        ┌────────────┐
+             │ AUTHORIZED  │        │   DENIED   │
+             └─────┬──────┘        └────────────┘
+                   │
+                   │
+                   ▼
+          ┌─────────────────────┐
+          │ CREATE AUTH SESSION │
+          │ / JWT / Token       │
+          └──────────┬──────────┘
+                     │
+                     ▼
+          ┌─────────────────────┐
+          │    USER DASHBOARD   │
+          │                     │
+          │ Locker A-104        │
+          │ Status: Active      │
+          └─────────────────────┘
+```
+
 **Non-negotiable architectural rules honored throughout:**
 - No P2P — one authoritative backend.
 - No NoSQL — SQLite (default) or PostgreSQL is the relational source of truth.
