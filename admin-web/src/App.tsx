@@ -2,20 +2,22 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { LoginPage } from "./pages/LoginPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { VaultPage } from "./pages/VaultPage";
-import { RequestsPage } from "./pages/RequestsPage";
+import { Dashboard } from "./pages/Dashboard";
+import { CustomerVerificationPage } from "./pages/CustomerVerificationPage";
+import { LockerGrid } from "./pages/LockerGrid";
+import { VerificationSessionsPage } from "./pages/VerificationSessionsPage";
+import { AuditLogs } from "./pages/AuditLogs";
+import { SettingsPage } from "./pages/SettingsPage";
+import { Requests } from "./pages/Requests";
 import { RequestDetailPage } from "./pages/RequestDetailPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { BranchesPage } from "./pages/BranchesPage";
-import { CompliancePage } from "./pages/CompliancePage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
-import { SettingsPage } from "./pages/SettingsPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === "CUSTOMER") return <Navigate to="/login" replace />; // admin portal is staff-only
+  if (user.role === "CUSTOMER") return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -31,17 +33,24 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="vault" element={<VaultPage />} />
-        <Route path="requests" element={<RequestsPage />} />
+        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="verification" element={<CustomerVerificationPage />} />
+        <Route path="lockers" element={<LockerGrid />} />
+        <Route path="sessions" element={<VerificationSessionsPage />} />
+        <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="settings" element={<SettingsPage />} />
+
+        {/* Legacy / Auxiliary route fallbacks */}
+        <Route path="vault" element={<LockerGrid />} />
+        <Route path="requests" element={<Requests />} />
         <Route path="requests/:requestId" element={<RequestDetailPage />} />
+        <Route path="compliance" element={<AuditLogs />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="branches" element={<BranchesPage />} />
-        <Route path="compliance" element={<CompliancePage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

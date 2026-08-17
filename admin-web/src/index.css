@@ -4,28 +4,60 @@
 
 @layer base {
   body {
-    @apply text-primary antialiased;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    @apply text-slate-900 bg-[#F8FAFC] antialiased;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-surface border border-border rounded-lg shadow-sm;
+    @apply bg-white border border-slate-200 rounded-[12px] shadow-sm hover:shadow transition-all duration-150;
   }
+
+  .card-static {
+    @apply bg-white border border-slate-200 rounded-[12px] shadow-sm;
+  }
+
   .btn-primary {
-    @apply bg-primary text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-[#003366] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#002244] active:bg-[#001830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm inline-flex items-center justify-center;
   }
+
   .btn-secondary {
-    @apply bg-white text-primary text-sm font-medium px-4 py-2 rounded-md border border-border hover:bg-slate-50 transition-colors disabled:opacity-50;
+    @apply bg-white text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm inline-flex items-center justify-center;
   }
+
+  .btn-accent {
+    @apply bg-[#2563EB] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm inline-flex items-center justify-center;
+  }
+
   .btn-success {
-    @apply bg-success text-white text-sm font-medium px-4 py-2 rounded-md hover:brightness-95 transition disabled:opacity-50;
+    @apply bg-[#16A34A] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 shadow-sm inline-flex items-center justify-center;
   }
+
   .btn-danger {
-    @apply bg-danger text-white text-sm font-medium px-4 py-2 rounded-md hover:brightness-95 transition disabled:opacity-50;
+    @apply bg-[#DC2626] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 shadow-sm inline-flex items-center justify-center;
   }
+
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold uppercase tracking-wide;
   }
+}
+
+@keyframes scan-line {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 90%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.8;
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 2.2s ease-in-out infinite;
 }
