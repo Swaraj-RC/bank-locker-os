@@ -13,8 +13,62 @@ export interface AuthUser {
 }
 
 // -------------------------------------------------------------
-// EXACT MOCK BACKEND CONTRACTS SPECIFIED IN MASTER PROMPT
+// EXACT BACKEND CONTRACTS & VERIFICATION LIFECYCLE
 // -------------------------------------------------------------
+
+export type VerificationLifecycleStatus =
+  | "IDLE"
+  | "STARTED"
+  | "IN_PROGRESS"
+  | "APPROVED"
+  | "REVIEW"
+  | "BLOCKED"
+  | "COMPLETED";
+
+export interface StartVerificationRequest {
+  customer_id: string;
+  locker_id: string;
+}
+
+export interface StartVerificationResponse {
+  session_id: string;
+  customer_id: string;
+  locker_id: string;
+  status: string;
+}
+
+export interface VerificationAttemptPayload {
+  session_id: string;
+  face_match: boolean;
+  face_confidence: number;
+  liveness_passed: boolean;
+  liveness_confidence: number;
+  spoof_probability: number;
+  processing_time_ms: number;
+}
+
+export interface VerificationAttemptResponse {
+  session_id: string;
+  face_match: boolean;
+  face_confidence: number;
+  liveness_passed: boolean;
+  liveness_confidence: number;
+  spoof_probability: number;
+  risk_score: number;
+  risk_level: "LOW" | "MEDIUM" | "HIGH" | string;
+  decision: "APPROVED" | "MANUAL REVIEW" | "BLOCKED" | "REVIEW" | string;
+  failure_reason?: string | null;
+  recommended_action?: string | null;
+  processing_time_ms: number;
+  timestamp?: string;
+}
+
+export interface ApiErrorDetail {
+  status: number;
+  message: string;
+  code?: string;
+  title?: string;
+}
 
 export interface CustomerContract {
   customerId: string;

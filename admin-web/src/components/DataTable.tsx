@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Inbox, RefreshCw, AlertCircle } from "lucide-react";
 
 export interface Column<T> {
   header: string;
@@ -13,6 +13,9 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   pageSize?: number;
   onRowClick?: (row: T) => void;
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -21,6 +24,9 @@ export function DataTable<T extends { id: string | number }>({
   searchPlaceholder = "Search records...",
   pageSize = 5,
   onRowClick,
+  isLoading = false,
+  error = null,
+  onRetry,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,7 +63,15 @@ export function DataTable<T extends { id: string | number }>({
           />
         </div>
         <div className="text-xs text-slate-500 font-medium">
-          Showing <span className="font-bold text-slate-800">{filteredData.length}</span> entries
+          {isLoading ? (
+            <span className="flex items-center gap-1 text-slate-400">
+              <RefreshCw size={12} className="animate-spin" /> Loading entries...
+            </span>
+          ) : (
+            <>
+              Showing <span className="font-bold text-slate-800">{filteredData.length}</span> entries
+            </>
+          )}
         </div>
       </div>
 
@@ -74,7 +88,40 @@ export function DataTable<T extends { id: string | number }>({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {paginatedData.length > 0 ? (
+            {error ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-10 text-center">
+                  <div className="max-w-xs mx-auto space-y-2">
+                    <AlertCircle size={28} className="mx-auto text-rose-500" />
+                    <p className="text-xs font-semibold text-slate-800">Failed to load data</p>
+                    <p className="text-[11px] text-slate-500">{error}</p>
+                    {onRetry && (
+                      <button
+                        type="button"
+                        onClick={onRetry}
+                        className="btn-secondary py-1.5 px-3 text-xs font-bold inline-flex items-center gap-1.5 mt-2"
+                      >
+                        <RefreshCw size={12} /> Retry
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ) : isLoading ? (
+              // Skeleton Loader Rows
+              Array.from({ length: pageSize }).map((_, rIdx) => (
+                <tr key={rIdx} className="animate-pulse">
+                  {columns.map((_, cIdx) => (
+                    <td key={cIdx} className="px-4 py-3.5">
+                      <div
+                        className="h-3.5 bg-slate-200 rounded"
+                        style={{ width: `${60 + ((rIdx + cIdx) % 4) * 10}%` }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : paginatedData.length > 0 ? (
               paginatedData.map((row) => (
                 <tr
                   key={row.id}
@@ -94,8 +141,20 @@ export function DataTable<T extends { id: string | number }>({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-400">
-                  No records matching search query.
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400">
+                  <div className="space-y-2">
+                    <Inbox size={32} className="mx-auto text-slate-300 stroke-[1.5]" />
+                    <p className="text-xs font-medium text-slate-600">No records found</p>
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm("")}
+                        className="text-[11px] text-[#003366] font-bold hover:underline"
+                      >
+                        Clear search filter
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             )}
@@ -110,14 +169,14 @@ export function DataTable<T extends { id: string | number }>({
         </span>
         <div className="flex items-center gap-1">
           <button
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || isLoading}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40"
           >
             <ChevronLeft size={16} />
           </button>
           <button
-            disabled={currentPage >= totalPages}
+            disabled={currentPage >= totalPages || isLoading}
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40"
           >
@@ -128,3 +187,4 @@ export function DataTable<T extends { id: string | number }>({
     </div>
   );
 }
+

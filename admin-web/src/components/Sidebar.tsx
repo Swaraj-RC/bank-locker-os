@@ -18,8 +18,12 @@ const NAV_ITEMS = [
   { to: "/lockers", label: "Locker Details", icon: Vault },
   { to: "/sessions", label: "Verification Sessions", icon: ListTodo },
   { to: "/audit-logs", label: "Audit Logs", icon: ShieldAlert },
+  { to: "/customers", label: "Customers Directory", icon: UserCheck },
+  { to: "/branches", label: "Branch Network", icon: Vault },
+  { to: "/analytics", label: "Analytics & Telemetry", icon: LayoutDashboard },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
+
 
 export function Sidebar() {
   const { user, logout } = useAuth();

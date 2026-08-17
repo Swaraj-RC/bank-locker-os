@@ -283,41 +283,63 @@ export function LockerGrid() {
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
           Select Locker from Bay Matrix ({filteredLockers.length} available)
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {filteredLockers.map((locker) => {
-            const isSelected = selectedLocker.id === locker.id;
-            return (
-              <button
-                key={locker.id}
-                type="button"
-                onClick={() => setSelectedLocker(locker)}
-                className={`p-4 rounded-xl text-left border transition-all flex flex-col justify-between ${
-                  isSelected
-                    ? "bg-white border-[#003366] ring-2 ring-[#003366]/20 shadow-md"
-                    : "bg-white border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-sm font-bold text-[#003366]">
-                    {locker.locker_number}
-                  </span>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                    {locker.locker_size}
-                  </span>
-                </div>
 
-                <div className="my-1.5">
-                  <StatusBadge status={locker.status} />
-                </div>
+        {filteredLockers.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {filteredLockers.map((locker) => {
+              const isSelected = selectedLocker.id === locker.id;
+              return (
+                <button
+                  key={locker.id}
+                  type="button"
+                  onClick={() => setSelectedLocker(locker)}
+                  className={`p-4 rounded-xl text-left border transition-all flex flex-col justify-between ${
+                    isSelected
+                      ? "bg-white border-[#003366] ring-2 ring-[#003366]/20 shadow-md"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-sm font-bold text-[#003366]">
+                      {locker.locker_number}
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {locker.locker_size}
+                    </span>
+                  </div>
 
-                <div className="text-[11px] text-slate-500 font-medium truncate mt-2">
-                  {locker.customer_name || "Unassigned"}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="my-1.5">
+                    <StatusBadge status={locker.status} />
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 font-medium truncate mt-2">
+                    {locker.customer_name || "Unassigned"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="card p-12 text-center text-slate-400 space-y-2">
+            <Vault size={36} className="mx-auto text-slate-300" />
+            <p className="text-sm font-semibold text-slate-700">No lockers match criteria</p>
+            <p className="text-xs text-slate-400">
+              No lockers found for size &ldquo;{selectedSize}&rdquo; or search &ldquo;{searchTerm}&rdquo;.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedSize("ALL");
+                setSearchTerm("");
+              }}
+              className="text-xs text-[#003366] font-bold hover:underline"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

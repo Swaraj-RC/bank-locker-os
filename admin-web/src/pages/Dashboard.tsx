@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { StatCard } from "../components/StatCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { SecurityAlertCard } from "../components/SecurityAlertCard";
@@ -19,23 +20,122 @@ import {
   Lock,
   Radio,
   PlusCircle,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function Dashboard() {
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [activities, setActivities] = useState(MOCK_RECENT_ACTIVITIES);
+  const [kpis, setKpis] = useState(MOCK_KPIS);
+  const [pulseCount, setPulseCount] = useState(0);
+
+  // Demo Presentation Mode Live Simulation
+  useEffect(() => {
+    if (!isDemoMode) {
+      setActivities(MOCK_RECENT_ACTIVITIES);
+      setKpis(MOCK_KPIS);
+      return;
+    }
+
+    const SIMULATED_STREAM = [
+      {
+        id: "ACT-LIVE-1",
+        time: "Just now",
+        customerName: "Vikram Malhotra",
+        customerId: "CUST-5521",
+        lockerId: "L-108",
+        decision: "APPROVED" as const,
+        confidence: 98.6,
+      },
+      {
+        id: "ACT-LIVE-2",
+        time: "10s ago",
+        customerName: "Ananya Iyer",
+        customerId: "CUST-3902",
+        lockerId: "L-204",
+        decision: "APPROVED" as const,
+        confidence: 99.2,
+      },
+      {
+        id: "ACT-LIVE-3",
+        time: "25s ago",
+        customerName: "Rohan Deshmukh",
+        customerId: "CUST-7740",
+        lockerId: "L-115",
+        decision: "MANUAL REVIEW" as const,
+        confidence: 88.4,
+      },
+      {
+        id: "ACT-LIVE-4",
+        time: "40s ago",
+        customerName: "Priya Sharma",
+        customerId: "CUST-2291",
+        lockerId: "L-101",
+        decision: "APPROVED" as const,
+        confidence: 97.9,
+      },
+    ];
+
+
+    let streamIdx = 0;
+    const interval = setInterval(() => {
+      const nextEvent = {
+        ...SIMULATED_STREAM[streamIdx % SIMULATED_STREAM.length],
+        id: `ACT-SIM-${Date.now()}`,
+      };
+      streamIdx++;
+
+      setActivities((prev) => [nextEvent, ...prev.slice(0, 4)]);
+      setKpis((prev) => ({
+        ...prev,
+        today_verifications: prev.today_verifications + 1,
+        approved_today:
+          nextEvent.decision === "APPROVED" ? prev.approved_today + 1 : prev.approved_today,
+      }));
+      setPulseCount((c) => c + 1);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isDemoMode]);
+
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Header Banner with Demo Presentation Mode Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Employee Verification Dashboard
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Employee Verification Dashboard
+            </h1>
+            {isDemoMode && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full animate-pulse">
+                <Sparkles size={12} /> LIVE DEMO STREAM ACTIVE
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time biometric authorization feed · Branch: Pune Camp
+            Real-time biometric authorization feed · Branch: Pune Camp Main Hub
           </p>
         </div>
+
         <div className="flex items-center gap-3">
+          {/* Demo Mode Switch */}
+          <button
+            type="button"
+            onClick={() => setIsDemoMode(!isDemoMode)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+              isDemoMode
+                ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+            }`}
+            title="Toggle live simulated data stream for presentation"
+          >
+            <Sparkles size={14} className={isDemoMode ? "text-amber-300" : "text-purple-600"} />
+            <span>Demo Mode: <strong>{isDemoMode ? "ON" : "OFF"}</strong></span>
+          </button>
+
           <Link
             to="/verification"
             className="btn-accent flex items-center gap-2 text-xs font-semibold py-2 px-4 shadow-sm"
@@ -45,34 +145,34 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Top 4 KPI Cards (Prompt Required) */}
+      {/* Top 4 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Lockers"
-          value={MOCK_KPIS.total_lockers}
+          value={kpis.total_lockers}
           subtext="Pune Camp Vault Bay A-D"
           icon={<Vault size={20} />}
           accentColor="bg-[#003366]"
         />
         <StatCard
           label="Today's Verifications"
-          value={MOCK_KPIS.today_verifications}
-          subtext="In-bank staff sessions"
+          value={kpis.today_verifications}
+          subtext={isDemoMode ? "Streaming live updates..." : "In-bank staff sessions"}
           icon={<ScanFace size={20} />}
           accentColor="bg-[#2563EB]"
-          trend={{ value: "+12% vs avg", isPositive: true }}
+          trend={{ value: isDemoMode ? `+${pulseCount} live` : "+12% vs avg", isPositive: true }}
         />
         <StatCard
           label="Approved Today"
-          value={MOCK_KPIS.approved_today}
-          subtext="91.6% success rate"
+          value={kpis.approved_today}
+          subtext="92.4% success rate"
           icon={<CheckCircle2 size={20} className="text-emerald-600" />}
           accentColor="bg-[#16A34A]"
-          trend={{ value: "44 authorized", isPositive: true }}
+          trend={{ value: `${kpis.approved_today} authorized`, isPositive: true }}
         />
         <StatCard
           label="Failed Attempts"
-          value={MOCK_KPIS.failed_attempts}
+          value={kpis.failed_attempts}
           subtext="Blocked or review"
           icon={<XCircle size={20} className="text-rose-600" />}
           accentColor="bg-[#DC2626]"
@@ -86,11 +186,16 @@ export function Dashboard() {
           {/* Recent Activity Table */}
           <div className="card p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                  Recent Verification Activity
-                </h2>
-                <p className="text-xs text-slate-500">Latest in-branch facial & liveness authorizations</p>
+              <div className="flex items-center gap-2">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                    Recent Verification Activity
+                  </h2>
+                  <p className="text-xs text-slate-500">Latest in-branch facial & liveness authorizations</p>
+                </div>
+                {isDemoMode && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                )}
               </div>
               <Link
                 to="/audit-logs"
@@ -112,9 +217,16 @@ export function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {MOCK_RECENT_ACTIVITIES.map((act) => (
-                    <tr key={act.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-3 font-mono text-slate-500">{act.time}</td>
+                  {activities.map((act, index) => (
+                    <tr
+                      key={act.id}
+                      className={`hover:bg-slate-50/60 transition-colors ${
+                        isDemoMode && index === 0 ? "bg-emerald-50/40" : ""
+                      }`}
+                    >
+                      <td className="py-3 px-3 font-mono text-slate-500 whitespace-nowrap">
+                        {act.time}
+                      </td>
                       <td className="py-3 px-3">
                         <div className="font-bold text-slate-900">{act.customerName}</div>
                         <div className="font-mono text-[11px] text-[#003366]">{act.customerId}</div>
@@ -142,7 +254,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Security Alerts Section (Prompt Required: High Risk Attempt, Manual Review Pending, Liveness Failure) */}
+          {/* Security Alerts Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -166,7 +278,7 @@ export function Dashboard() {
 
         {/* Right 1 Column: Branch Status & Terminal Control */}
         <div className="space-y-6">
-          {/* Branch Status (Prompt Required) */}
+          {/* Branch Status */}
           <div className="card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -245,3 +357,4 @@ export function Dashboard() {
     </div>
   );
 }
+

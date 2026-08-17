@@ -12,12 +12,16 @@ import {
   ShieldCheck,
   Calendar,
   UserCheck,
+  FileSpreadsheet,
+  Check,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function AuditLogs() {
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
   const [searchCustId, setSearchCustId] = useState<string>("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
 
   const filteredLogs = MOCK_AUDIT_LOG_ITEMS.filter((item) => {
     // Filter by decision
@@ -44,6 +48,64 @@ export function AuditLogs() {
     { label: "Blocked", value: "BLOCKED" },
   ];
 
+  // Pure browser CSV Generation (Blob + URL.createObjectURL)
+  const handleExportCSV = () => {
+    setIsExporting(true);
+
+    try {
+      const headers = [
+        "Timestamp",
+        "Session ID",
+        "Customer ID",
+        "Customer Name",
+        "Locker Number",
+        "Face Match",
+        "Liveness Passed",
+        "Risk Score",
+        "Risk Level",
+        "Decision",
+        "Operator ID",
+      ];
+
+      const rows = filteredLogs.map((log) => [
+        `"${log.timestamp}"`,
+        `"${log.sessionId}"`,
+        `"${log.customerId}"`,
+        `"${log.customerName || ""}"`,
+        `"${log.locker}"`,
+        `"${log.faceMatch === true ? "MATCH" : log.faceMatch === false ? "MISMATCH" : "N/A"}"`,
+        `"${log.liveness === true ? "PASSED" : log.liveness === false ? "FAILED" : "N/A"}"`,
+        log.riskScore,
+        `"${log.riskLevel}"`,
+        `"${log.decision}"`,
+        `"${log.operatorId}"`,
+      ]);
+
+      const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().split("T")[0];
+      const filename = `audit_logs_${today}.csv`;
+
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (err) {
+      console.error("[AuditLogs] CSV Export failed", err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -64,14 +126,23 @@ export function AuditLogs() {
 
         <button
           type="button"
-          onClick={() => alert("Audit log export generated (CSV format).")}
-          className="btn-secondary text-xs font-semibold py-2 px-3.5 flex items-center gap-2 self-start sm:self-auto"
+          onClick={handleExportCSV}
+          disabled={isExporting || filteredLogs.length === 0}
+          className="btn-secondary text-xs font-semibold py-2 px-3.5 flex items-center gap-2 self-start sm:self-auto disabled:opacity-50"
         >
-          <Download size={14} /> Export Audit Log (CSV)
+          {exportSuccess ? (
+            <>
+              <Check size={14} className="text-emerald-600" /> Exported ({filteredLogs.length} rows)
+            </>
+          ) : (
+            <>
+              <FileSpreadsheet size={14} className="text-[#003366]" /> Export Audit Log (CSV)
+            </>
+          )}
         </button>
       </div>
 
-      {/* Filter and Search Bar (Prompt Required) */}
+      {/* Filter and Search Bar */}
       <div className="card p-4 space-y-3">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Search by Customer ID */}
@@ -81,12 +152,12 @@ export function AuditLogs() {
               type="text"
               value={searchCustId}
               onChange={(e) => setSearchCustId(e.target.value)}
-              placeholder="Search by Customer ID (e.g. CUST-4410)..."
+              placeholder="Search Customer ID, Session, Locker..."
               className="w-full pl-9 pr-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366]/20 focus:border-[#003366]"
             />
           </div>
 
-          {/* Decision Filters (Prompt Required: All, Approved, Manual Review, Blocked) */}
+          {/* Decision Filters */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto p-1 bg-slate-100 rounded-lg text-xs font-semibold">
             <span className="text-slate-400 px-2 text-[11px] uppercase">Filter:</span>
             {filterOptions.map((opt) => (
@@ -107,7 +178,7 @@ export function AuditLogs() {
         </div>
       </div>
 
-      {/* Professional Audit Table (Prompt Required Columns) */}
+      {/* Professional Audit Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
@@ -219,11 +290,16 @@ export function AuditLogs() {
         </div>
 
         {filteredLogs.length === 0 && (
-          <div className="p-10 text-center text-slate-400 text-xs">
-            No audit records found matching your customer ID search or decision filter.
+          <div className="p-12 text-center text-slate-400 space-y-2">
+            <ShieldAlert size={36} className="mx-auto text-slate-300 stroke-[1.5]" />
+            <p className="text-sm font-semibold text-slate-700">No audit records found</p>
+            <p className="text-xs text-slate-400">
+              No verification audit entries matching &ldquo;{searchCustId}&rdquo; or filter &ldquo;{selectedFilter}&rdquo;.
+            </p>
           </div>
         )}
       </div>
     </div>
   );
 }
+
