@@ -19,6 +19,8 @@ const REQUEST_COLORS: Record<string, string> = {
   REJECTED: "bg-red-50 text-red-700 border border-red-200",
   EXPIRED: "bg-red-50 text-red-700 border border-red-200",
   CANCELLED: "bg-slate-100 text-slate-500 border border-slate-300",
+  MANUAL_REVIEW: "bg-orange-50 text-orange-700 border border-orange-300",
+  BLOCKED: "bg-red-100 text-red-800 border border-red-400",
 };
 
 export function StatusBadge({ status, kind = "request" }: { status: string; kind?: "locker" | "request" }) {

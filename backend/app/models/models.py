@@ -14,6 +14,10 @@ from app.core.enums import (
     RequestType, RequestStatus, TokenType, TokenStatus, NotificationType,
 )
 
+# ---------------------------------------------------------------------------
+# FaceVerification — imported here so Alembic env.py picks it up on metadata
+# ---------------------------------------------------------------------------
+
 
 def gen_uuid() -> str:
     return str(uuid.uuid4())
@@ -154,3 +158,40 @@ class Notification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (Index("ix_notifications_user", "user_id"),)
+
+
+class FaceVerification(Base):
+    """
+    Stores derived signals from one face-capture attempt by a staff member.
+
+    IMPORTANT — DATA HANDLING:
+    - raw_response holds the AI module's structured output dict, NOT image bytes.
+    - Image bytes are never persisted anywhere in this system.
+    - TODO (follow-up): evaluate encryption-at-rest for this table before
+      production deployment. Biometric-derived data may require it under
+      applicable banking / data-protection regulations.
+    - TODO (follow-up): establish a retention policy and purge schedule for
+      rows in this table. Confirm regulatory requirements with compliance.
+    """
+    __tablename__ = "face_verifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    request_id: Mapped[str] = mapped_column(String(36), ForeignKey("locker_requests.id"), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    actor_role: Mapped[str] = mapped_column(String(30), nullable=False)
+    face_match: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    confidence: Mapped[float] = mapped_column(nullable=False)
+    liveness_passed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    spoof_probability: Mapped[float] = mapped_column(nullable=False)
+    # Structured AI output — not the raw image.  Not logged at INFO level or above.
+    raw_response: Mapped[dict] = mapped_column(JSON, nullable=False)
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    request: Mapped["LockerRequest"] = relationship(foreign_keys=[request_id])
+    actor: Mapped["User"] = relationship(foreign_keys=[actor_id])
+
+    __table_args__ = (
+        Index("ix_face_verifications_request_id", "request_id"),
+        Index("ix_face_verifications_actor_id", "actor_id"),
+    )

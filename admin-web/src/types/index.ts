@@ -39,7 +39,22 @@ export type RequestStatus =
   | "COMPLETED"
   | "REJECTED"
   | "EXPIRED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "MANUAL_REVIEW"   // face-verify: low confidence / liveness fail — needs human review
+  | "BLOCKED";        // face-verify: terminal — attempt limit exhausted
+
+export interface FaceVerification {
+  id: string;
+  request_id: string;
+  actor_id: string;
+  actor_role: string;
+  face_match: boolean;
+  confidence: number;
+  liveness_passed: boolean;
+  spoof_probability: number;
+  attempt_number: number;
+  created_at: string;
+}
 
 export interface LockerRequest {
   id: string;

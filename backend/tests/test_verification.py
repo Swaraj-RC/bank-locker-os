@@ -1,7 +1,13 @@
+import pytest
+import app.core.config as cfg
 from tests.conftest import auth_headers
 
 
-def _submit_and_generate(client, seeded):
+def _submit_and_generate(client, seeded, monkeypatch):
+    # Disable face-verification requirement so these token-only tests
+    # exercise the original dual-control flow without any webcam step.
+    monkeypatch.setattr(cfg.settings, "FACE_VERIFICATION_REQUIRED", False)
+
     cust_headers = auth_headers(client, "cust@test.com")
     op_headers = auth_headers(client, "op@test.com")
 
@@ -14,8 +20,8 @@ def _submit_and_generate(client, seeded):
     return request_id, tokens, cust_headers, op_headers
 
 
-def test_full_dual_token_flow_authorizes_access(client, seeded):
-    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded)
+def test_full_dual_token_flow_authorizes_access(client, seeded, monkeypatch):
+    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded, monkeypatch)
 
     v1 = client.post(f"/api/v1/verification/{request_id}/verify/customer",
                       json={"token": tokens["demo_customer_token"]}, headers=cust_headers)
@@ -33,16 +39,16 @@ def test_full_dual_token_flow_authorizes_access(client, seeded):
     assert locker["status"] == "ACCESS_ACTIVE"
 
 
-def test_wrong_customer_token_rejected(client, seeded):
-    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded)
+def test_wrong_customer_token_rejected(client, seeded, monkeypatch):
+    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded, monkeypatch)
     resp = client.post(f"/api/v1/verification/{request_id}/verify/customer",
                         json={"token": "000000"}, headers=cust_headers)
     assert resp.status_code == 400
     assert resp.json()["error"]["code"] == "INVALID_TOKEN"
 
 
-def test_reused_token_rejected(client, seeded):
-    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded)
+def test_reused_token_rejected(client, seeded, monkeypatch):
+    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded, monkeypatch)
     client.post(f"/api/v1/verification/{request_id}/verify/customer",
                 json={"token": tokens["demo_customer_token"]}, headers=cust_headers)
     # Attempt to reuse the same customer token again
@@ -52,16 +58,16 @@ def test_reused_token_rejected(client, seeded):
     assert resp.status_code == 409
 
 
-def test_bank_token_cannot_be_verified_before_customer_token(client, seeded):
-    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded)
+def test_bank_token_cannot_be_verified_before_customer_token(client, seeded, monkeypatch):
+    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded, monkeypatch)
     resp = client.post(f"/api/v1/verification/{request_id}/verify/bank",
                         json={"token": tokens["demo_bank_token"]}, headers=op_headers)
     assert resp.status_code == 409
     assert resp.json()["error"]["code"] == "INVALID_REQUEST_STATE"
 
 
-def test_excessive_attempts_locks_token(client, seeded):
-    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded)
+def test_excessive_attempts_locks_token(client, seeded, monkeypatch):
+    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded, monkeypatch)
     for _ in range(3):
         resp = client.post(f"/api/v1/verification/{request_id}/verify/customer",
                             json={"token": "111111"}, headers=cust_headers)
@@ -73,7 +79,7 @@ def test_excessive_attempts_locks_token(client, seeded):
     assert resp2.json()["error"]["code"] == "MAX_ATTEMPTS_EXCEEDED"
 
 
-def test_customer_cannot_verify_someone_elses_request_token(client, seeded, db_session):
+def test_customer_cannot_verify_someone_elses_request_token(client, seeded, db_session, monkeypatch):
     from app.core.security import hash_password
     from app.models import User
     other_customer = User(full_name="Other Customer", email="other@test.com", phone="+915555555555",
@@ -81,7 +87,7 @@ def test_customer_cannot_verify_someone_elses_request_token(client, seeded, db_s
     db_session.add(other_customer)
     db_session.commit()
 
-    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded)
+    request_id, tokens, cust_headers, op_headers = _submit_and_generate(client, seeded, monkeypatch)
     other_headers = auth_headers(client, "other@test.com")
     resp = client.post(f"/api/v1/verification/{request_id}/verify/customer",
                         json={"token": tokens["demo_customer_token"]}, headers=other_headers)

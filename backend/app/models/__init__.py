@@ -1,8 +1,9 @@
 from app.models.models import (
-    User, Branch, Locker, LockerRequest, VerificationToken, AuditEvent, Notification
+    User, Branch, Locker, LockerRequest, VerificationToken, AuditEvent, Notification,
+    FaceVerification,
 )
 
 __all__ = [
     "User", "Branch", "Locker", "LockerRequest", "VerificationToken",
-    "AuditEvent", "Notification",
+    "AuditEvent", "Notification", "FaceVerification",
 ]

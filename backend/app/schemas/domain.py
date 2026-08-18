@@ -30,6 +30,13 @@ class LockerRequestCreate(BaseModel):
     scheduled_at: datetime | None = None
 
 
+class StaffLockerRequestCreate(BaseModel):
+    """Schema for bank operators creating a request on behalf of a physically present customer."""
+    locker_id: str
+    request_type: str = "ACCESS"   # ACCESS | INSPECTION | MAINTENANCE | CLOSURE
+    scheduled_at: datetime | None = None
+
+
 class LockerRequestOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
@@ -51,6 +58,33 @@ class RejectRequest(BaseModel):
 
 class VerifyTokenRequest(BaseModel):
     token: str
+
+
+class FaceVerifyRequest(BaseModel):
+    image: str  # base64 data-URI ("data:image/jpeg;base64,...") or raw base64
+    blink_frame: str | None = None
+    nod_frame: str | None = None
+    # mock_override is accepted but only honoured outside production
+    mock_override: str | None = None
+
+
+class FaceVerificationOut(BaseModel):
+    """Public representation of a FaceVerification row.
+
+    raw_response is deliberately excluded — it holds biometric-derived
+    signals and should not appear in API responses or logs.
+    """
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    request_id: str
+    actor_id: str
+    actor_role: str
+    face_match: bool
+    confidence: float
+    liveness_passed: bool
+    spoof_probability: float
+    attempt_number: int
+    created_at: datetime
 
 
 class AuditEventOut(BaseModel):

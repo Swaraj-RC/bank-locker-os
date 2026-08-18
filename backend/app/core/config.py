@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     # Rate limiting
     OTP_RATE_LIMIT_PER_MINUTE: int = 5
 
+    # Face verification
+    AI_MODE: str = "real"                        # "mock" | "real"
+    FACE_VERIFICATION_REQUIRED: bool = True
+    FACE_CONFIDENCE_THRESHOLD: float = 0.70
+    MAX_FACE_ATTEMPTS: int = 100
+    FACE_RATE_LIMIT_PER_MINUTE: int = 120        # per-user sliding window
+    MAX_IMAGE_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
+    FACE_DISTANCE_THRESHOLD: float = 0.50       # dlib Euclidean face distance cutoff
+    EMBEDDINGS_DIR: str = "data/embeddings"      # Registered face embeddings storage
+    MOCK_FACE_RESULT: str = "pass"               # pass | low_confidence | liveness_fail | no_match
+
     # CORS
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",

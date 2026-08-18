@@ -28,9 +28,26 @@ def _redis_key(request_id: str, token_type: str) -> str:
 
 def generate_verification_pair(db: Session, req: LockerRequest, actor: User) -> dict:
     """Create CUSTOMER_TOKEN + BANK_TOKEN for a request, store secret in Redis
-    (TTL-bound) and a hash record in Postgres for audit durability."""
+    (TTL-bound) and a hash record in Postgres for audit durability.
+
+    Backend prerequisite: if FACE_VERIFICATION_REQUIRED=true, a face-verification
+    result with face_match=True must already exist for this request. This confirms
+    staff identity was matched. Confidence/liveness thresholds are evaluated by the
+    decision engine at bank-token-verify time (they may route to MANUAL_REVIEW rather
+    than APPROVED).
+    """
     if req.status not in (RequestStatus.SUBMITTED.value, RequestStatus.VERIFICATION_PENDING.value):
         raise ApiError("INVALID_REQUEST_STATE", f"Cannot generate verification for request in state {req.status}", 409)
+
+    # Backend enforcement of face-verification prerequisite.
+    if settings.FACE_VERIFICATION_REQUIRED:
+        from app.services.face_verification_service import face_verification_passed
+        if not face_verification_passed(db, req.id):
+            raise ApiError(
+                "FACE_VERIFICATION_REQUIRED",
+                "Staff face verification must be completed and passed before generating verification tokens.",
+                422,
+            )
 
     ttl = settings.VERIFICATION_TOKEN_TTL_SECONDS
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl)
@@ -145,14 +162,8 @@ def verify_bank_token(db: Session, req: LockerRequest, submitted: str, actor: Us
     _verify_token(db, req, TokenType.BANK_TOKEN.value, submitted, actor)
     transition_request(db, req, RequestStatus.TOKEN_B_VERIFIED.value, actor)
 
-    # Dual control satisfied -> ACCESS_AUTHORIZED -> auto-approve + activate locker.
-    transition_request(db, req, RequestStatus.APPROVED.value, actor)
-    req.approved_by = actor.id
-    transition_locker(db, req.locker, LockerStatus.ACCESS_ACTIVE.value, actor, correlation_id=req.correlation_id)
-    transition_request(db, req, RequestStatus.ACCESS_ACTIVE.value, actor)
-
-    record_event(db, actor=actor, action="ACCESS_AUTHORIZED", entity_type="LOCKER_REQUEST",
-                 entity_id=req.id, correlation_id=req.correlation_id)
-    db.commit()
-    db.refresh(req)
-    return req
+    # Dual control satisfied — delegate to the decision engine.
+    # The decision engine evaluates the face-verification signal (if required)
+    # and drives the request to its final state via state_machine.py.
+    from app.services import decision_service
+    return decision_service.evaluate_and_finalize(db, req, actor)

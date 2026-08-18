@@ -9,7 +9,6 @@ const NAV_ITEMS = [
   { to: "/vault", label: "Locker Vault", icon: Vault },
   { to: "/requests", label: "Requests", icon: ClipboardList },
   { to: "/customers", label: "Customers", icon: Users },
-  { to: "/branches", label: "Branches", icon: Building2 },
   { to: "/compliance", label: "Compliance & Audit", icon: ShieldCheck },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },

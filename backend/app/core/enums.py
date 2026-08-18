@@ -54,6 +54,9 @@ class RequestStatus(str, enum.Enum):
     REJECTED = "REJECTED"
     EXPIRED = "EXPIRED"
     CANCELLED = "CANCELLED"
+    # Face-verification outcome states
+    MANUAL_REVIEW = "MANUAL_REVIEW"   # Low confidence / liveness fail — needs human review
+    BLOCKED = "BLOCKED"               # Terminal — attempt limit exhausted
 
 
 class TokenType(str, enum.Enum):

@@ -17,7 +17,7 @@ from app.services.audit_service import record_event
 # Legal locker-status transitions (from -> allowed set of to)
 LOCKER_TRANSITIONS: dict[str, set[str]] = {
     LockerStatus.AVAILABLE.value: {LockerStatus.OCCUPIED.value, LockerStatus.MAINTENANCE.value, LockerStatus.RESTRICTED.value},
-    LockerStatus.OCCUPIED.value: {LockerStatus.VERIFICATION_PENDING.value, LockerStatus.MAINTENANCE.value, LockerStatus.RESTRICTED.value, LockerStatus.AVAILABLE.value},
+    LockerStatus.OCCUPIED.value: {LockerStatus.VERIFICATION_PENDING.value, LockerStatus.ACCESS_ACTIVE.value, LockerStatus.MAINTENANCE.value, LockerStatus.RESTRICTED.value, LockerStatus.AVAILABLE.value},
     LockerStatus.VERIFICATION_PENDING.value: {LockerStatus.ACCESS_ACTIVE.value, LockerStatus.OCCUPIED.value, LockerStatus.RESTRICTED.value},
     LockerStatus.ACCESS_ACTIVE.value: {LockerStatus.OCCUPIED.value, LockerStatus.MAINTENANCE.value},
     LockerStatus.MAINTENANCE.value: {LockerStatus.AVAILABLE.value, LockerStatus.OCCUPIED.value, LockerStatus.RESTRICTED.value},
@@ -26,17 +26,41 @@ LOCKER_TRANSITIONS: dict[str, set[str]] = {
 
 # Legal request-status transitions
 REQUEST_TRANSITIONS: dict[str, set[str]] = {
-    RequestStatus.SUBMITTED.value: {RequestStatus.VERIFICATION_PENDING.value, RequestStatus.REJECTED.value, RequestStatus.CANCELLED.value},
-    RequestStatus.VERIFICATION_PENDING.value: {RequestStatus.TOKEN_A_VERIFIED.value, RequestStatus.REJECTED.value, RequestStatus.EXPIRED.value, RequestStatus.CANCELLED.value},
-    RequestStatus.TOKEN_A_VERIFIED.value: {RequestStatus.TOKEN_B_VERIFIED.value, RequestStatus.REJECTED.value, RequestStatus.EXPIRED.value},
-    RequestStatus.TOKEN_B_VERIFIED.value: {RequestStatus.APPROVAL_PENDING.value, RequestStatus.APPROVED.value},
+    RequestStatus.SUBMITTED.value: {
+        RequestStatus.VERIFICATION_PENDING.value,
+        RequestStatus.APPROVED.value,
+        RequestStatus.MANUAL_REVIEW.value,
+        RequestStatus.REJECTED.value,
+        RequestStatus.CANCELLED.value,
+        RequestStatus.BLOCKED.value,          # face-verify: attempt limit hit before tokens
+    },
+    RequestStatus.VERIFICATION_PENDING.value: {
+        RequestStatus.TOKEN_A_VERIFIED.value,
+        RequestStatus.REJECTED.value,
+        RequestStatus.EXPIRED.value,
+        RequestStatus.CANCELLED.value,
+    },
+    RequestStatus.TOKEN_A_VERIFIED.value: {
+        RequestStatus.TOKEN_B_VERIFIED.value,
+        RequestStatus.REJECTED.value,
+        RequestStatus.EXPIRED.value,
+    },
+    RequestStatus.TOKEN_B_VERIFIED.value: {
+        RequestStatus.APPROVAL_PENDING.value,
+        RequestStatus.APPROVED.value,
+        RequestStatus.MANUAL_REVIEW.value,    # face-verify: low confidence / liveness fail
+        RequestStatus.REJECTED.value,         # face-verify: face_match=false
+        RequestStatus.BLOCKED.value,          # face-verify: attempts exhausted
+    },
     RequestStatus.APPROVAL_PENDING.value: {RequestStatus.APPROVED.value, RequestStatus.REJECTED.value},
-    RequestStatus.APPROVED.value: {RequestStatus.ACCESS_ACTIVE.value},
-    RequestStatus.ACCESS_ACTIVE.value: {RequestStatus.COMPLETED.value},
-    RequestStatus.COMPLETED.value: set(),
-    RequestStatus.REJECTED.value: set(),
-    RequestStatus.EXPIRED.value: set(),
-    RequestStatus.CANCELLED.value: set(),
+    RequestStatus.APPROVED.value: {RequestStatus.ACCESS_ACTIVE.value, RequestStatus.SUBMITTED.value, RequestStatus.REJECTED.value},
+    RequestStatus.ACCESS_ACTIVE.value: {RequestStatus.COMPLETED.value, RequestStatus.SUBMITTED.value, RequestStatus.APPROVED.value},
+    RequestStatus.MANUAL_REVIEW.value: {RequestStatus.APPROVED.value, RequestStatus.REJECTED.value, RequestStatus.SUBMITTED.value},
+    RequestStatus.COMPLETED.value: {RequestStatus.SUBMITTED.value},
+    RequestStatus.REJECTED.value: {RequestStatus.SUBMITTED.value},
+    RequestStatus.EXPIRED.value: {RequestStatus.SUBMITTED.value},
+    RequestStatus.CANCELLED.value: {RequestStatus.SUBMITTED.value},
+    RequestStatus.BLOCKED.value: {RequestStatus.SUBMITTED.value},       # reset allows re-enabling
 }
 
 
